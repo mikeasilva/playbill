@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
 Scrape playbill.com's "grosses" and store it in a sqlite database
