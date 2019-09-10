@@ -7,17 +7,17 @@ output:
     highlight: kate
     code_folding: "hide"
 ---
-
-
 ```{r knitr_init, echo=FALSE, cache=FALSE, message=FALSE}
 library(knitr)
 library(rmdformats)
 library(DBI)
 library(dplyr)
+library(ggplot2)
 library(RSQLite)
+library(kableExtra)
 
 ## Global options
-options(max.print="75")
+options(max.print="150")
 opts_chunk$set(echo=FALSE,
 	             cache=TRUE,
                prompt=FALSE,
@@ -28,3 +28,175 @@ opts_chunk$set(echo=FALSE,
 opts_knit$set(width=75)
 ```
 
+## Introduction
+
+Playbill.com publishes [the gross revenue for broadway shows by week](http://www.playbill.com/grosses).  The following data has been scrapped and extracted:
+
+```{r}
+conn <- dbConnect(RSQLite::SQLite(), "playbill.sqlite")
+df <- dbGetQuery(conn, "SELECT * FROM data") %>%
+  mutate(week_ending = as.Date(week_ending))
+dbDisconnect(conn)
+```
+
++ show - The name of the Broadway show
++ theatre - The theatre
++ gross - The gross revenue for the week in dollars
++ potential_gross - The potential gross revenue
++ gross_diff - The difference between the potential and actual
++ avg_ticket - Average ticket price
++ top_ticket - The maximum ticket price
++ seats_sold - The number of seats sold
++ seats_in_theatre - The total number of seats in the theatre
++ perfs - The number of performances
++ previews - The number of previews
++ percent_capacity - The percent of seats fille (seats_sold / seats_in_theatre * perfs)
++ capacity_diff - 100% - percent_capacity
++ week_ending - The date of the week ending
++ week_total_gross - The total gross revenue for all shows for the given week
+
+### Summary
+
+The following is a summary of the data.
+
+```{r}
+df %>% 
+  select(-id) %>%
+  summary(.) %>%
+  kable() %>%
+  kable_styling()
+```
+
+## Data Validation
+
+### Complete Data Each Year
+
+Let's check to make sure we have 52 weeks represented in each year:
+
+```{r}
+df <- df %>%
+  mutate(Year = format(week_ending,"%Y"))
+
+df %>%
+  group_by(Year, week_ending) %>%
+  summarise(records=n()) %>%
+  mutate(count = 1) %>%
+  group_by(Year) %>%
+  summarise(Weeks = sum(count)) %>%
+  kable() %>%
+  kable_styling()
+```
+
+This checks out.  The begining and the end of the data set are incomplete but that is to be expected.  There is no data that is missing through the aquisition process.
+
+### Closer Look at the "Zeros"
+
+There are some zero values that need further inspection
+
+#### Gross Revenue
+
+There are `r nrow(df[df$gross==0,])` records that have zero gross revenue.  Let's take a closer look at these records.
+
+```{r}
+zero_gross <- df %>%
+  filter(gross == 0)
+```
+
+
+## Exploration
+
+```{r}
+df %>%
+  group_by(week_ending) %>%
+  summarise(shows = n()) %>%
+  ggplot(aes(week_ending, shows)) + 
+  geom_point() + 
+  #geom_line() +
+  labs(title = "Number of Shows by Date", 
+       x = element_blank(),
+       y = element_blank()) +
+  expand_limits(y=0) +
+  theme(panel.background = element_blank(),
+        panel.grid.major = element_line(color = "gray95"))
+```
+
+
+```{r}
+df %>%
+  group_by(week_ending) %>%
+  summarise(perfs = sum(perfs)) %>%
+  ggplot(aes(week_ending, perfs)) + 
+  geom_point() + 
+  labs(title = "Number of Preformances by Date", 
+       x = element_blank(),
+       y = element_blank()) +
+  expand_limits(y=0) +
+  theme(panel.background = element_blank(),
+        panel.grid.major = element_line(color = "gray95"))
+```
+
+```{r}
+df %>%
+  group_by(week_ending) %>%
+  summarise(seats_sold = sum(seats_sold) / 1000) %>%
+  ggplot(aes(week_ending, seats_sold)) + 
+  geom_point() + 
+  labs(title = "Number of Seats Sold by Date", 
+       x = element_blank(),
+       y = "Thousands") +
+  expand_limits(y=0) +
+  theme(panel.background = element_blank(),
+        panel.grid.major = element_line(color = "gray95"))
+```
+
+```{r}
+ggplot(df, aes(avg_ticket, stat(count))) +
+  geom_density() +
+  labs(title = "Average Ticket Price", 
+       x = "Dollars",
+       y = "Number of Shows") +
+  theme(panel.background = element_blank(),
+        panel.grid.major = element_line(color = "gray95"))
+```
+
+```{r}
+ggplot(df, aes(top_ticket, stat(count))) +
+  geom_density() +
+  labs(title = "Top Ticket Price", 
+       x = "Dollars",
+       y = "Number of Shows") +
+  theme(panel.background = element_blank(),
+        panel.grid.major = element_line(color = "gray95"))
+```
+
+
+```{r}
+conn <- dbConnect(RSQLite::SQLite(), "playbill.sqlite")
+playbill <- dbGetQuery(conn, "SELECT show, theatre, gross, week_ending FROM data") %>%
+  rename(current_week = gross) %>%
+  mutate(week_ending = as.Date(week_ending))
+# Add in the gross revenue from the preceeding week and write a CSV file
+playbill <- playbill %>%
+  rename(past_week = current_week) %>%
+  mutate(week_ending = week_ending - 7) %>%
+  merge(playbill) %>%
+  select(show, theatre, current_week, past_week, week_ending)
+```
+
+```{r}
+library(gifski)
+library(gganimate)
+playbill %>%
+  mutate(past_week = past_week / 1000000,
+         current_week = current_week / 1000000) %>%
+ggplot(aes(past_week, current_week)) +
+  geom_point() +
+  expand_limits(y=0) +
+  expand_limits(x=0) +
+  labs(title = "Gross Box Office Revenue for Week Ending: {frame_time}",
+       x = "Previous Week (millions)",
+       y = "Current Week (millions)") +
+  theme(panel.background = element_blank(),
+        panel.grid.major = element_line(color = "gray95")) +
+  transition_time(week_ending)
+```
