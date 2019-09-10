@@ -4,6 +4,7 @@ author: "Michael Silva"
 date: "`r Sys.Date()`"
 output:
   rmdformats::readthedown:
+    toc_depth: 3
     highlight: kate
     code_folding: "hide"
 ---
@@ -55,7 +56,9 @@ dbDisconnect(conn)
 + week_ending - The date of the week ending
 + week_total_gross - The total gross revenue for all shows for the given week
 
-### Summary
+## Exploration
+
+### Summary Statistics
 
 The following is a summary of the data.
 
@@ -66,6 +69,248 @@ df %>%
   kable() %>%
   kable_styling()
 ```
+
+### Variable Distributions
+
+The following density plots show the spread of the data.  The red verticle line is the mean and the blue verticle line is the median.
+
+```{r}
+density_plot <- function(d, title, xlab, ylab){
+  ggplot(d, aes(x, stat(count))) +
+    geom_density() +
+    labs(title = title, 
+       x = xlab,
+       y = ylab) +
+    theme(panel.background = element_blank(),
+        panel.grid.major = element_line(color = "gray95")) +
+    geom_vline(xintercept = mean(d$x), color = "red") +
+    geom_vline(xintercept = median(d$x), color = "blue")
+}
+```
+
+```{r}
+df %>%
+  mutate(x = gross / 1000000) %>%
+  density_plot(., "Gross Revenue", "Millions of Dollars", "Count")
+```
+
+```{r}
+df %>%
+  mutate(x = potential_gross / 1000000) %>%
+  density_plot(., "Potential Gross Revenue", "Millions of Dollars", "Count")
+```
+
+```{r}
+df %>%
+  mutate(x = gross_diff / 1000000) %>%
+  density_plot(., "Gross Difference", "Millions of Dollars", "Count")
+```
+
+```{r}
+df %>%
+  mutate(x = avg_ticket) %>%
+  density_plot(., "Average Ticket Price", "Dollars", "Count")
+```
+
+```{r}
+df %>%
+  mutate(x = top_ticket) %>%
+  density_plot(., "Top Ticket Price", "Dollars", "Count")
+```
+
+```{r}
+df %>%
+  mutate(x = seats_sold) %>%
+  density_plot(., "Seats Sold", element_blank(), "Count")
+```
+
+```{r}
+df %>%
+  mutate(x = seats_in_theatre) %>%
+  density_plot(., "Seats in Theatre", element_blank(), "Count")
+```
+
+```{r}
+df %>%
+  mutate(x = perfs) %>%
+  density_plot(., "Performances", element_blank(), "Count")
+```
+
+```{r}
+df %>%
+  mutate(x = previews) %>%
+  density_plot(., "Previews", element_blank(), "Count")
+```
+
+```{r}
+df %>%
+  mutate(x = percent_capacity * 100) %>%
+  density_plot(., "Capacity", "Percent", "Count")
+```
+
+### Variables Over Time
+
+```{r}
+over_time <- function(d, title, xlab, ylab){
+  ggplot(d, aes(week_ending, y)) + 
+  geom_point() + 
+  labs(title = title, 
+       x = xlab,
+       y = ylab) +
+  expand_limits(y=0) +
+  theme(panel.background = element_blank(),
+        panel.grid.major = element_line(color = "gray95"))
+}
+```
+
+```{r}
+df %>%
+  mutate(y = gross / 1000000) %>%
+  over_time(., "Gross Revenue by Date", element_blank(), "Millions")
+```
+
+```{r}
+df %>%
+  mutate(y = potential_gross / 1000000) %>%
+  over_time(., "Potential Gross Revenue by Date", element_blank(), "Millions")
+```
+
+```{r}
+df %>%
+  mutate(y = gross_diff / 1000000) %>%
+  over_time(., "Gross Revenue Difference by Date", element_blank(), "Millions")
+```
+
+
+```{r}
+df %>%
+  mutate(y = avg_ticket) %>%
+  over_time(., "Average Ticket Price by Date", element_blank(), "Dollars")
+```
+
+```{r}
+df %>%
+  mutate(y = top_ticket) %>%
+  over_time(., "Top Ticket Price by Date", element_blank(), "Dollars")
+```
+
+```{r}
+df %>%
+  mutate(y = seats_sold) %>%
+  over_time(., "Seats Sold by Date", element_blank(), element_blank())
+```
+
+```{r}
+df %>%
+  mutate(y = seats_in_theatre) %>%
+  over_time(., "Seats In Theatre by Date", element_blank(), element_blank())
+```
+
+```{r}
+df %>%
+  mutate(y = perfs) %>%
+  over_time(., "Number of Preformances by Date", element_blank(), element_blank()) 
+```
+
+```{r}
+df %>%
+  mutate(y = previews) %>%
+  over_time(., "Number of Previews by Date", element_blank(), element_blank()) 
+```
+
+```{r}
+df %>%
+  mutate(y = percent_capacity * 100) %>%
+  over_time(., "Capacity by Date", element_blank(), element_blank()) 
+```
+
+### Aggregations
+
+```{r}
+df %>%
+  group_by(week_ending) %>%
+  summarise(y = n()) %>%
+  over_time(., "Total Shows by Date", element_blank(), element_blank()) 
+```
+
+```{r}
+df %>%
+  group_by(week_ending) %>%
+  summarise(y = sum(perfs)) %>%
+  over_time(., "Total Preformances by Date", element_blank(), element_blank()) 
+```
+
+```{r}
+df %>%
+  group_by(week_ending) %>%
+  summarise(y = sum(gross / 1000000)) %>%
+  over_time(., "Total Gross Revenue by Date", element_blank(), "Millions")
+```
+
+```{r}
+df %>%
+  group_by(week_ending) %>%
+  summarise(y = sum(potential_gross / 1000000)) %>%
+  over_time(., "Total Potential Gross Revenue by Date", element_blank(), "Millions")
+```
+
+```{r}
+df %>%
+  group_by(week_ending) %>%
+  summarise(y = sum(gross_diff / 1000000)) %>%
+  over_time(., "Total Gross Revenue Difference by Date", element_blank(), "Millions")
+```
+
+```{r}
+df %>%
+  group_by(week_ending) %>%
+  summarise(seats_sold = sum(seats_sold), gross = sum(gross)) %>%
+  mutate(y = gross / seats_sold) %>%
+  over_time(., "Overall Average Ticket Price by Date", element_blank(), "Dollars")
+```
+
+```{r}
+df %>%
+  group_by(week_ending) %>%
+  summarize(y = mean(top_ticket)) %>%
+  over_time(., "Average Top Ticket Price by Date", element_blank(), "Dollars")
+```
+
+```{r}
+df %>%
+  group_by(week_ending) %>%
+  summarise(y = sum(seats_sold)) %>%
+  over_time(., "Total Seats Sold by Date", element_blank(), element_blank())
+```
+
+```{r}
+df %>%
+  group_by(week_ending) %>%
+  summarise(y = sum(seats_in_theatre)) %>%
+  over_time(., "Total Seats In Theatre by Date", element_blank(), element_blank())
+```
+
+```{r}
+df %>%
+  group_by(week_ending) %>%
+  summarise(y = sum(perfs)) %>%
+  over_time(., "Total Preformances by Date", element_blank(), element_blank()) 
+```
+
+```{r}
+df %>%
+  group_by(week_ending) %>%
+  summarise(y = sum(previews)) %>%
+  over_time(., "Total Previews by Date", element_blank(), element_blank()) 
+```
+
+```{r}
+df %>%
+  group_by(week_ending) %>%
+  summarise(y = mean(percent_capacity * 100)) %>%
+  over_time(., "Average Capacity by Date", element_blank(), element_blank()) 
+```
+
 
 ## Data Validation
 
@@ -103,71 +348,7 @@ zero_gross <- df %>%
 ```
 
 
-## Exploration
 
-```{r}
-df %>%
-  group_by(week_ending) %>%
-  summarise(shows = n()) %>%
-  ggplot(aes(week_ending, shows)) + 
-  geom_point() + 
-  #geom_line() +
-  labs(title = "Number of Shows by Date", 
-       x = element_blank(),
-       y = element_blank()) +
-  expand_limits(y=0) +
-  theme(panel.background = element_blank(),
-        panel.grid.major = element_line(color = "gray95"))
-```
-
-
-```{r}
-df %>%
-  group_by(week_ending) %>%
-  summarise(perfs = sum(perfs)) %>%
-  ggplot(aes(week_ending, perfs)) + 
-  geom_point() + 
-  labs(title = "Number of Preformances by Date", 
-       x = element_blank(),
-       y = element_blank()) +
-  expand_limits(y=0) +
-  theme(panel.background = element_blank(),
-        panel.grid.major = element_line(color = "gray95"))
-```
-
-```{r}
-df %>%
-  group_by(week_ending) %>%
-  summarise(seats_sold = sum(seats_sold) / 1000) %>%
-  ggplot(aes(week_ending, seats_sold)) + 
-  geom_point() + 
-  labs(title = "Number of Seats Sold by Date", 
-       x = element_blank(),
-       y = "Thousands") +
-  expand_limits(y=0) +
-  theme(panel.background = element_blank(),
-        panel.grid.major = element_line(color = "gray95"))
-```
-
-```{r}
-ggplot(df, aes(avg_ticket, stat(count))) +
-  geom_density() +
-  labs(title = "Average Ticket Price", 
-       x = "Dollars",
-       y = "Number of Shows") +
-  theme(panel.background = element_blank(),
-        panel.grid.major = element_line(color = "gray95"))
-```
-
-```{r}
-ggplot(df, aes(top_ticket, stat(count))) +
-  geom_density() +
-  labs(title = "Top Ticket Price", 
-       x = "Dollars",
-       y = "Number of Shows") +
-  theme(panel.background = element_blank(),
-        panel.grid.major = element_line(color = "gray95"))
-```
 
 
 ```{r}
@@ -183,7 +364,7 @@ playbill <- playbill %>%
   select(show, theatre, current_week, past_week, week_ending)
 ```
 
-```{r}
+```{r, eval=FALSE}
 library(gifski)
 library(gganimate)
 playbill %>%
