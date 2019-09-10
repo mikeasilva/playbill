@@ -2,3 +2,6 @@
 .Rproj.user
 *.Rproj
 .Rhistory
+*.html
+*_cache/
+*_files/
