@@ -1,7 +1,7 @@
 Playbill Data Analysis
 ================
-Michael Silva
-2019-09-19
+By: Michael Silva
+Last Run: 2019-09-19
 
 # Motivation
 
@@ -18,61 +18,8 @@ They say there is a rule of thumb that the previous week’s revenue is a
 good predictor of the current week’s. The exercise asks you to examine
 this claim with the data. As I worked through this question I was
 suprised to find that the the previous week’s revenue really was a good
-predictor of the current week’s.
-
-However, something didn’t sit right with me. The conclusion seemed to
-defy logic. If the current week’s revenue is predicted by the previous
-week’s, then there is basically no change in how much a show makes over
-time. That did not make any sense. I began to wonder if the authors
-cherry-picked the data for the purpose of the exercise and if the trend
-wouldn’t hold if a different week was examined.
-
-# Data Acquisition
-
-I scrapped playbill.com’s website to collect the gross box office
-results for all possible years. The data goes back to as far as 1985 and
-can continue to be scrapped. At the time of this analysis the data goes
-up to 2019-09-15. After exploring the data, I compiled a dataset
-matching what the author produced. No data was excluded from my dataset.
-In all there is 45450 weeks worth of data.
-
-# Does the Previous Week Predict the Current Week?
-
-So does the previous week’s revenue predict the current week? I looked
-deeper into the question. Here’s what I discovered:
-
-The first thing I discovered is that the author threw out data from 5
-shows (Brooklyn, I Am My Own Wife, Marc Salem’s Mind Games on Broadway,
-Reckless, and Twelve Angry Men). They didn’t explain this nor their
-reasoning. So the chart should have looked like this:
-
-![](README_files/figure-gfm/figure-2-1.png)<!-- -->
-
-Hmmm. Now there are 121 times the current or prevous week is zero. Let’s
-eliminate these cases from the data set.
-
-``` r
-playbill <- playbill %>%
-  filter(current_week > 0 & past_week > 0)
-```
-
-Now let’s look at the complete dataset. We will look at the rule of
-thumb (last week predicts this week) and the linear regression line
-(since that is what the textbook is about).
-
-![](README_files/figure-gfm/figure-3-1.png)<!-- -->
-
-There is definately a positive correlation between the previous and
-current week’s boxoffice revenue. The regression line (blue line above)
-is similar to the rule of thumb line (in red).
-
-# Appendix
-
-## Linear Regression Models
-
-### Textbook Model
-
-This model uses the textbook’s dataset
+predictor of the current week’s. Here’s the output of the regression
+model:
 
 ``` r
 textbook <- playbill %>%
@@ -103,7 +50,35 @@ Multiple R-squared:  0.9966,    Adjusted R-squared:  0.9963
 F-statistic:  4634 on 1 and 16 DF,  p-value: < 2.2e-16
 ```
 
-### Textbook Model (All Datapoints)
+However, something didn’t sit right with me. The conclusion seemed to
+defy logic. If the current week’s revenue is predicted by the previous
+week’s, then there is basically no change in how much a show makes over
+time. That did not make any sense. I began to wonder if the authors
+cherry-picked the data for the purpose of the exercise and if the trend
+wouldn’t hold if a different week was examined.
+
+# Data Acquisition
+
+I scrapped playbill.com’s website to collect the gross box office
+results for all possible years. The data goes back to as far as 1985 and
+can continue to be scrapped. At the time of this analysis the data goes
+up to 2019-09-15. After exploring the data, I compiled a dataset
+matching what the author produced. No data was excluded from my dataset.
+In all there is 45450 weeks worth of data.
+
+# Does the Previous Week Predict the Current Week?
+
+So does the previous week’s revenue predict the current week? I looked
+deeper into the question. Here’s what I discovered:
+
+The first thing I discovered is that the author threw out data from 5
+shows (Brooklyn, I Am My Own Wife, Marc Salem’s Mind Games on Broadway,
+Reckless, and Twelve Angry Men). They didn’t explain this nor their
+reasoning. So the chart should have looked like this:
+
+![](README_files/figure-gfm/figure-2-1.png)<!-- -->
+
+Hmmm. Let’s see what kind of effect this has on the regression model:
 
 ``` r
 textbook_all <- playbill %>%
@@ -133,10 +108,29 @@ Multiple R-squared:  0.9943,    Adjusted R-squared:  0.994
 F-statistic:  3642 on 1 and 21 DF,  p-value: < 2.2e-16
 ```
 
-### All Data Model
+There doesn’t seem to be any problem with this model. I wonder why they
+dropped some rows from the dataset?
 
-This model uses all the data except those observations with zero dollars
-in the previous or current week.
+## Full Dataset
+
+Now there are 121 times the current or prevous week is zero. Let’s
+eliminate these cases from the data set.
+
+``` r
+playbill <- playbill %>%
+  filter(current_week > 0 & past_week > 0)
+```
+
+Now let’s look at the full dataset. We will look at the rule of thumb
+(last week predicts this week) and the linear regression line (since
+that is what the textbook is about).
+
+![](README_files/figure-gfm/figure-3-1.png)<!-- -->
+
+There is definately a positive correlation between the previous and
+current week’s boxoffice revenue. The regression line (blue line above)
+is similar to the rule of thumb line (in red). Let’s see how the
+regression model preformed with more data:
 
 ``` r
 all_data <- playbill %>%
@@ -163,4 +157,42 @@ Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 Residual standard error: 113000 on 45300 degrees of freedom
 Multiple R-squared:  0.9327,    Adjusted R-squared:  0.9327 
 F-statistic: 6.276e+05 on 1 and 45300 DF,  p-value: < 2.2e-16
+```
+
+## What About Week by Week?
+
+Now this is a little unfair because the example in the textbook only
+looked at one week. What if we looked at all the weeks?
+
+``` r
+for(week in unique(playbill$week_ending)){
+  fit <- playbill %>%
+    filter(week_ending == week) %>%
+    lm(current_week ~ past_week, data = .)
+  row <- data.frame(
+    intercept = as.numeric(fit$coefficients['(Intercept)']), 
+    past_week = as.numeric(fit$coefficients['past_week']), 
+    adjusted_r_squared = summary(fit)$adj.r.squared,
+    week_ending = week
+    )
+  if(exists("week_by_week")){
+    week_by_week <- rbind(week_by_week, row)
+  } else {
+    week_by_week <- row
+  }
+}
+
+week_by_week %>%
+  select(-week_ending) %>%
+  summary()
+```
+
+``` 
+   intercept         past_week      adjusted_r_squared
+ Min.   :-315631   Min.   :0.3021   Min.   :0.5240    
+ 1st Qu.:  -5538   1st Qu.:0.9479   1st Qu.:0.9502    
+ Median :  12500   Median :0.9831   Median :0.9740    
+ Mean   :  18852   Mean   :0.9771   Mean   :0.9575    
+ 3rd Qu.:  36027   3rd Qu.:1.0122   3rd Qu.:0.9857    
+ Max.   : 528262   Max.   :1.8348   Max.   :1.0000    
 ```
