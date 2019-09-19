@@ -4,5 +4,4 @@
 .Rhistory
 *.html
 *_cache/
-*_files/
 README.Rmd
