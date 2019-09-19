@@ -328,6 +328,7 @@ df %>%
   mutate(count = 1) %>%
   group_by(Year) %>%
   summarise(Weeks = sum(count)) %>%
+  filter(Weeks < 52) %>%
   kable() %>%
   kable_styling()
 ```
