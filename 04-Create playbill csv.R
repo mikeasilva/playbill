@@ -10,7 +10,7 @@ df <- dbGetQuery(conn, "SELECT show, theatre, gross, week_ending FROM data") %>%
 # Add in the gross revenue from the preceeding week and write a CSV file
 df %>%
   rename(past_week = current_week) %>%
-  mutate(week_ending = week_ending - 7) %>%
+  mutate(week_ending = week_ending + 7) %>%
   merge(df) %>%
   select(show, theatre, current_week, past_week, week_ending) %>%
   write.csv(., "playbill.csv", row.names = FALSE)
