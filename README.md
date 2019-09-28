@@ -8,7 +8,7 @@ By: Michael Silva
 As part of my CUNY SPS Masters in Data Science training I took a
 Business Analytics and Data Mining course. We use Simon Shealther’s *A
 Modern Approach to Regression with R* in the class. In chapter 2 he
-introduces the topic of simple linear regression. In the excercise
+introduces the topic of simple linear regression. In the exercise
 section of that chapter he uses data on gross box office revenue for
 plays on Broadway in New York. He gives the following visualization for
 the week ending 2004-10-17:
@@ -16,11 +16,11 @@ the week ending 2004-10-17:
 ![](README_files/figure-gfm/figure-1-1.png)<!-- -->
 
 He later states that “some promoters of Broadway plays use the
-prediciton rule that next week’s groos box office results will be equal
+prediction rule that next week’s gross box office results will be equal
 to this week’s gross box office results.” The exercise asks you to
 examine this claim with the data.
 
-As I worked through this question I was suprised to find that the the
+As I worked through this question I was surprised to find that the the
 previous week’s revenue really was a good predictor of the current
 week’s. Here’s the output of the regression model:
 
@@ -45,13 +45,13 @@ Multiple R-squared:  0.9966,    Adjusted R-squared:  0.9963
 F-statistic:  4634 on 1 and 16 DF,  p-value: < 2.2e-16
 ```
 
-However, something didn’t sit right with me. The conclusion seemed to
+However, something did not sit right with me. The conclusion seemed to
 defy logic. If the current week’s revenue is predicted by the previous
 week’s, then there is basically no change in how much a show makes over
 time. The show would run week after week and pull in the same revenue.
 That did not make any sense. I began to wonder if the authors
 cherry-picked the data for the purpose of the exercise and if the trend
-wouldn’t hold if a different week was examined. I decided to look into
+would not hold if a different week was examined. I decided to look into
 this further.
 
 # Data Acquisition
@@ -72,7 +72,7 @@ deeper into the question. Here’s what I discovered:
 
 The first thing I discovered is that the author threw out data from 5
 shows (Brooklyn, I Am My Own Wife, Marc Salem’s Mind Games on Broadway,
-Reckless, and Twelve Angry Men). They didn’t explain this nor their
+Reckless, and Twelve Angry Men). They did not explain this nor their
 reasoning. So the chart should have looked like this:
 
 ![](README_files/figure-gfm/figure-2-1.png)<!-- -->
@@ -100,7 +100,7 @@ Multiple R-squared:  0.9943,    Adjusted R-squared:  0.994
 F-statistic:  3642 on 1 and 21 DF,  p-value: < 2.2e-16
 ```
 
-There doesn’t seem to be any problem with this model. I wonder why they
+There does not seem to be any problem with this model. I wonder why they
 dropped some rows from the dataset?
 
 ## Full Dataset
@@ -113,7 +113,7 @@ about).
 
 ![](README_files/figure-gfm/figure-3-1.png)<!-- -->
 
-There is definately a positive correlation between the previous and
+There is definitely a positive correlation between the previous and
 current week’s box office revenue. The regression line (blue line above)
 is similar to the rule of thumb line (in red). Let’s see how the
 regression model preformed with more data:
@@ -161,5 +161,5 @@ summary statistics for all of the linear regressions:
 
 The current week’s revenue is on average 98% of the preceding weeks.
 This is close to 1 and the adjusted R<sup>2</sup> are very high so the
-rule of thumb seems valid. But it is a fraction of the preceeding week.
+rule of thumb seems valid. But it is a fraction of the preceding week.
 This aligns nicely with my expectations.
