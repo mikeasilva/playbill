@@ -1,25 +1,28 @@
 Playbill Data Analysis
 ================
 By: Michael Silva
-Last Run: 2019-09-19
+| Last Updated: 2019-09-28
 
 # Motivation
 
 As part of my CUNY SPS Masters in Data Science training I took a
-Business Analytics course. We use Simon Shealther’s *A Modern Approach
-to Regression with R* in the class. In chapter 2 he introduces the topic
-of simple linear regression. In the excercise section of that chapter he
-uses data on gross revenue from broadway shows as collected by playbill.
-He gives the following visualization for the week ending 2004-10-17:
+Business Analytics and Data Mining course. We use Simon Shealther’s *A
+Modern Approach to Regression with R* in the class. In chapter 2 he
+introduces the topic of simple linear regression. In the excercise
+section of that chapter he uses data on gross box office revenue for
+plays on Broadway in New York. He gives the following visualization for
+the week ending 2004-10-17:
 
 ![](README_files/figure-gfm/figure-1-1.png)<!-- -->
 
-They say there is a rule of thumb that the previous week’s revenue is a
-good predictor of the current week’s. The exercise asks you to examine
-this claim with the data. As I worked through this question I was
-suprised to find that the the previous week’s revenue really was a good
-predictor of the current week’s. Here’s the output of the regression
-model:
+He later states that “some promoters of Broadway plays use the
+prediciton rule that next week’s groos box office results will be equal
+to this week’s gross box office results.” The exercise asks you to
+examine this claim with the data.
+
+As I worked through this question I was suprised to find that the the
+previous week’s revenue really was a good predictor of the current
+week’s. Here’s the output of the regression model:
 
 ``` r
 textbook <- playbill %>%
@@ -53,18 +56,22 @@ F-statistic:  4634 on 1 and 16 DF,  p-value: < 2.2e-16
 However, something didn’t sit right with me. The conclusion seemed to
 defy logic. If the current week’s revenue is predicted by the previous
 week’s, then there is basically no change in how much a show makes over
-time. That did not make any sense. I began to wonder if the authors
+time. The show would run week after week and pull in the same revenue.
+That did not make any sense. I began to wonder if the authors
 cherry-picked the data for the purpose of the exercise and if the trend
-wouldn’t hold if a different week was examined.
+wouldn’t hold if a different week was examined. I decided to look into
+this further.
 
 # Data Acquisition
 
 I scrapped playbill.com’s website to collect the gross box office
-results for all possible years. The data goes back to as far as 1985 and
-can continue to be scrapped. At the time of this analysis the data goes
-up to 2019-09-15. After exploring the data, I compiled a dataset
-matching what the author produced. No data was excluded from my dataset.
-In all there is 45450 weeks worth of data.
+results for all possible years. The data goes back to as far as
+1985-06-16. At the time of this analysis the data goes up to 2019-09-22.
+New data continues to be added.
+
+After exploring the data, I compiled a dataset matching what the author
+produced. No data was excluded from my dataset. In all there are 1,789
+weeks worth of data covering 1,090 shows preformed in 58 theatres.
 
 # Does the Previous Week Predict the Current Week?
 
@@ -128,7 +135,7 @@ that is what the textbook is about).
 ![](README_files/figure-gfm/figure-3-1.png)<!-- -->
 
 There is definately a positive correlation between the previous and
-current week’s boxoffice revenue. The regression line (blue line above)
+current week’s box office revenue. The regression line (blue line above)
 is similar to the rule of thumb line (in red). Let’s see how the
 regression model preformed with more data:
 
@@ -145,24 +152,30 @@ lm(formula = current_week ~ past_week, data = .)
 
 Residuals:
      Min       1Q   Median       3Q      Max 
--2003649   -35721    -6424    29754  1573960 
+-2003564   -35775    -6446    29796  1573978 
 
 Coefficients:
              Estimate Std. Error t value Pr(>|t|)    
-(Intercept) 2.456e+04  8.777e+02   27.99   <2e-16 ***
-past_week   9.651e-01  1.218e-03  792.18   <2e-16 ***
+(Intercept) 2.458e+04  8.779e+02    28.0   <2e-16 ***
+past_week   9.651e-01  1.219e-03   791.9   <2e-16 ***
 ---
 Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
-Residual standard error: 113000 on 45300 degrees of freedom
-Multiple R-squared:  0.9327,    Adjusted R-squared:  0.9327 
-F-statistic: 6.276e+05 on 1 and 45300 DF,  p-value: < 2.2e-16
+Residual standard error: 113000 on 45306 degrees of freedom
+Multiple R-squared:  0.9326,    Adjusted R-squared:  0.9326 
+F-statistic: 6.27e+05 on 1 and 45306 DF,  p-value: < 2.2e-16
 ```
+
+That is interesting. With a very high R<sup>2</sup>, the models
+indicates that that the current week’s gross box office revenue is
+`round(all_data$coefficients[2] * 100, 0)`% of the past week’s revenue.
+This is close to but less than one.
 
 ## What About Week by Week?
 
 Now this is a little unfair because the example in the textbook only
-looked at one week. What if we looked at all the weeks?
+looked at one week. What if we looked at all the weeks? Here;s the
+summary statistics for all of the linear regressions:
 
 ``` r
 for(week in unique(playbill$week_ending)){
@@ -170,7 +183,7 @@ for(week in unique(playbill$week_ending)){
     filter(week_ending == week) %>%
     lm(current_week ~ past_week, data = .)
   row <- data.frame(
-    intercept = as.numeric(fit$coefficients['(Intercept)']), 
+    Intercept = as.numeric(fit$coefficients['(Intercept)']), 
     past_week = as.numeric(fit$coefficients['past_week']), 
     adjusted_r_squared = summary(fit)$adj.r.squared,
     week_ending = week
@@ -188,11 +201,16 @@ week_by_week %>%
 ```
 
 ``` 
-   intercept         past_week      adjusted_r_squared
+   Intercept         past_week      adjusted_r_squared
  Min.   :-315631   Min.   :0.3021   Min.   :0.5240    
  1st Qu.:  -5538   1st Qu.:0.9479   1st Qu.:0.9502    
- Median :  12500   Median :0.9831   Median :0.9740    
- Mean   :  18852   Mean   :0.9771   Mean   :0.9575    
+ Median :  12500   Median :0.9830   Median :0.9738    
+ Mean   :  18858   Mean   :0.9771   Mean   :0.9574    
  3rd Qu.:  36027   3rd Qu.:1.0122   3rd Qu.:0.9857    
- Max.   : 528262   Max.   :1.8348   Max.   :1.0000    
+ Max.   : 528262   Max.   :1.8348   Max.   :0.9999    
 ```
+
+The current week’s revenue is on average 98% of the preceding weeks.
+This is close to 1 and the adjusted R<sup>2</sup> are very high so the
+rule of thumb seems valid. But it is a fraction of the preceeding week.
+This aligns nicely with my expectations.
