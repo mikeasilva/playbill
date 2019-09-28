@@ -167,14 +167,13 @@ F-statistic: 6.27e+05 on 1 and 45306 DF,  p-value: < 2.2e-16
 ```
 
 That is interesting. With a very high R<sup>2</sup>, the models
-indicates that that the current week’s gross box office revenue is
-`round(all_data$coefficients[2] * 100, 0)`% of the past week’s revenue.
-This is close to but less than one.
+indicates that that the current week’s gross box office revenue is about
+97% of the past week’s revenue. This is close to but less than one.
 
 ## What About Week by Week?
 
 Now this is a little unfair because the example in the textbook only
-looked at one week. What if we looked at all the weeks? Here;s the
+looked at one week. What if we looked at all the weeks? Here’s the
 summary statistics for all of the linear regressions:
 
 ``` r
