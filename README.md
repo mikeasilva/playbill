@@ -24,14 +24,6 @@ As I worked through this question I was suprised to find that the the
 previous week’s revenue really was a good predictor of the current
 week’s. Here’s the output of the regression model:
 
-``` r
-textbook <- playbill %>%
-  filter(week_ending == "2004-10-17") %>%
-  filter(!show %in% excluded) %>%
-  lm(current_week ~ past_week, data = .)
-summary(textbook)
-```
-
 ``` 
 
 Call:
@@ -87,13 +79,6 @@ reasoning. So the chart should have looked like this:
 
 Hmmm. Let’s see what kind of effect this has on the regression model:
 
-``` r
-textbook_all <- playbill %>%
-  filter(week_ending == "2004-10-17") %>%
-  lm(current_week ~ past_week, data = .)
-summary(textbook_all)
-```
-
 ``` 
 
 Call:
@@ -120,17 +105,11 @@ dropped some rows from the dataset?
 
 ## Full Dataset
 
-Now there are 121 times the current or prevous week is zero. Let’s
-eliminate these cases from the data set.
-
-``` r
-playbill <- playbill %>%
-  filter(current_week > 0 & past_week > 0)
-```
-
-Now let’s look at the full dataset. We will look at the rule of thumb
-(last week predicts this week) and the linear regression line (since
-that is what the textbook is about).
+Now there are 121 times the current or previous week is zero. I will
+eliminate these cases from the data set. Now let’s look at the full
+dataset. We will look at the rule of thumb (last week predicts this
+week) and the linear regression line (since that is what the textbook is
+about).
 
 ![](README_files/figure-gfm/figure-3-1.png)<!-- -->
 
@@ -138,12 +117,6 @@ There is definately a positive correlation between the previous and
 current week’s box office revenue. The regression line (blue line above)
 is similar to the rule of thumb line (in red). Let’s see how the
 regression model preformed with more data:
-
-``` r
-all_data <- playbill %>%
-  lm(current_week ~ past_week, data = .)
-summary(all_data)
-```
 
 ``` 
 
@@ -175,29 +148,6 @@ indicates that that the current week’s gross box office revenue is about
 Now this is a little unfair because the example in the textbook only
 looked at one week. What if we looked at all the weeks? Here’s the
 summary statistics for all of the linear regressions:
-
-``` r
-for(week in unique(playbill$week_ending)){
-  fit <- playbill %>%
-    filter(week_ending == week) %>%
-    lm(current_week ~ past_week, data = .)
-  row <- data.frame(
-    Intercept = as.numeric(fit$coefficients['(Intercept)']), 
-    past_week = as.numeric(fit$coefficients['past_week']), 
-    adjusted_r_squared = summary(fit)$adj.r.squared,
-    week_ending = week
-    )
-  if(exists("week_by_week")){
-    week_by_week <- rbind(week_by_week, row)
-  } else {
-    week_by_week <- row
-  }
-}
-
-week_by_week %>%
-  select(-week_ending) %>%
-  summary()
-```
 
 ``` 
    Intercept         past_week      adjusted_r_squared
